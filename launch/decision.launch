@@ -1,0 +1,21 @@
+<launch>
+  <param name="init_x" value="8.5" />
+  <param name="init_y" value="5" />
+
+  <param name="aim1_x" value="9" />
+  <param name="aim1_y" value="5" />
+  <param name="aim2_x" value="13" />
+  <param name="aim2_y" value="5" />
+  <param name="home_x" value="7" />
+  <param name="home_y" value="7" />
+
+  <param name="reach_thresh" value="2" />
+  <param name="target_radium" value="0.8" />
+
+  <param name="rotate_when_move" value="1" />
+
+  <param name="exit_fight_time" value="5" />
+
+  <node pkg="stupid_decision" type="decision_node" name="decision" output="screen" required="true">
+  </node>
+</launch>

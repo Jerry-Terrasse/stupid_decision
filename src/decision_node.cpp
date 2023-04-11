@@ -13,6 +13,7 @@ double aim2_x = 14, aim2_y = 6;
 double home_x = 7, home_y = 6;
 
 int now_target = 1;
+bool running = false;
 double reach_thresh = 1;
 double target_radium = 0.8;
 
@@ -24,9 +25,12 @@ int build_hp = 1500;
 
 int rotate_when_move = 0;
 
+double enemy_ts = 0;
+double exit_fight_time = 2;
+
 void odom_callback(nav_msgs::Odometry::ConstPtr odom_)
 {
-    ROS_INFO("Odometry: %f, %f", odom_->pose.pose.position.x, odom_->pose.pose.position.y);
+    // ROS_INFO("Odometry: %f, %f", odom_->pose.pose.position.x, odom_->pose.pose.position.y);
     odom = *odom_;
     now_x = odom.pose.pose.position.x + init_x;
     now_y = odom.pose.pose.position.y + init_y;
@@ -34,24 +38,28 @@ void odom_callback(nav_msgs::Odometry::ConstPtr odom_)
 
 void enemy_callback(robot_msgs::Autoaim_Info::ConstPtr enemies_)
 {
-    ROS_INFO("Enemy: %d", enemies_->data.size());
+    ROS_INFO("Enemy: %ld", enemies_->data.size());
     enemies = *enemies_;
+    if(enemies.data.size() > 0) {
+        enemy_ts = ros::Time::now().toSec();
+    }
 }
 
 void game_callback(std_msgs::Int32::ConstPtr game_time_)
 {
-    ROS_INFO("Game time: %d", game_time_->data);
+    // ROS_INFO("Game time: %d", game_time_->data);
     game_time = *game_time_;
 }
 
 bool reach(double x, double y, double thresh)
 {
+    ROS_INFO("dis: %f", (x - now_x) * (x - now_x) + (y - now_y) * (y - now_y));
     return (x - now_x) * (x - now_x) + (y - now_y) * (y - now_y) < thresh * thresh;
 }
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "stupid_decision_node");
+    ros::init(argc, argv, "decision_node");
     ros::NodeHandle nh;
 
     nh.getParam("init_x", init_x);
@@ -65,6 +73,8 @@ int main(int argc, char **argv)
     nh.getParam("rotate_when_move", rotate_when_move);
     nh.getParam("home_x", home_x);
     nh.getParam("home_y", home_y);
+
+    nh.getParam("exit_fight_time", exit_fight_time);
 
     ros::Subscriber odom_sub = nh.subscribe("/Odometry", 1, odom_callback);
     ros::Subscriber enemy_sub = nh.subscribe("/autoaim2decision", 1, enemy_callback);
@@ -80,15 +90,17 @@ int main(int argc, char **argv)
     Zero.data = 0;
     One.data = 1;
 
-    ros::Rate loop_rate(50);
+    ros::Rate loop_rate(1);
     Status next_status = INIT;
     ros::spinOnce();
+    double ts=0;
     for(; ros::ok(); ros::spinOnce(), loop_rate.sleep())
     {
         status = next_status;
         switch (status)
         {
         case INIT:
+            ROS_INFO("Status: INIT");
             if(game_time.data > 0) {
                 ROS_INFO("Game start!");
                 next_status = WANDER;
@@ -98,49 +110,65 @@ int main(int argc, char **argv)
             break;
 
         case WANDER:
-            if(hp < low_hp_thresh) {
+            ROS_INFO("Status: WANDER %d", now_target);
+            if(game_time.data > 300) {
+                ROS_INFO("Game time late");
+                next_status = DEFEND;
+                running = false;
+                break;
+            } else if(hp < low_hp_thresh) {
                 ROS_INFO("Low HP!");
                 next_status = DEFEND;
+                running = false;
                 break;
             } else if(build_hp < build_low_hp_thresh) {
                 ROS_INFO("Low BUILD HP!");
                 next_status = DEFEND;
+                running = false;
                 break;
             } else if(enemies.data.size() > 0) {
                 ROS_INFO("Enemy found!");
+                enemy_ts = ros::Time::now().toSec();
                 next_status = FIGHT;
+                running = false;
                 break;
             } else {
                 next_status = WANDER;
             }
             if(now_target == 1) {
                 if(reach(aim1_x, aim1_y, reach_thresh)) {
+                    running = false;
                     now_target = 2;
                 }
             } else if(now_target == 2) {
                 if(reach(aim2_x, aim2_y, reach_thresh)) {
+                    running = false;
                     now_target = 1;
                 }
             }
             rotate_pub.publish(rotate_when_move ? One : Zero);
-            if(now_target == 1) {
-                robot_msgs::Walk_CMD cmd;
-                cmd.opt = 0;
-                cmd.radium = target_radium;
-                cmd.pos.x = aim1_x;
-                cmd.pos.y = aim1_y;
-                aim_pub.publish(cmd);
-            } else if(now_target == 2) {
-                robot_msgs::Walk_CMD cmd;
-                cmd.opt = 0;
-                cmd.radium = target_radium;
-                cmd.pos.x = aim2_x;
-                cmd.pos.y = aim2_y;
-                aim_pub.publish(cmd);
+            if(true) {
+                running = true;
+                if(now_target == 1) {
+                    robot_msgs::Walk_CMD cmd;
+                    cmd.opt = 0;
+                    cmd.radium = target_radium;
+                    cmd.pos.x = aim1_x;
+                    cmd.pos.y = aim1_y;
+                    aim_pub.publish(cmd);
+                } else if(now_target == 2) {
+                    robot_msgs::Walk_CMD cmd;
+                    cmd.opt = 0;
+                    cmd.radium = target_radium;
+                    cmd.pos.x = aim2_x;
+                    cmd.pos.y = aim2_y;
+                    aim_pub.publish(cmd);
+                }
             }
             break;
 
         case FIGHT:
+            ROS_INFO("Status: FIGHT");
             if(hp < low_hp_thresh) {
                 ROS_INFO("Low HP!");
                 next_status = DEFEND;
@@ -149,7 +177,7 @@ int main(int argc, char **argv)
                 ROS_INFO("Low BUILD HP!");
                 next_status = DEFEND;
                 break;
-            } else if(enemies.data.size() == 0) {
+            } else if(enemies.data.size() == 0 && ros::Time::now().toSec() - enemy_ts > exit_fight_time) {
                 ROS_INFO("Enemy lost!");
                 next_status = WANDER;
                 break;
@@ -176,19 +204,24 @@ int main(int argc, char **argv)
             break;
 
         case DEFEND:
+            ROS_INFO("Status: DEFEND");
             if(reach(home_x, home_y, reach_thresh)) {
                 ROS_INFO("Reach home!");
+                running = false;
                 next_status = DEFEND;
                 rotate_pub.publish(One);
             } else {
                 next_status = DEFEND;
                 rotate_pub.publish(rotate_when_move ? One : Zero);
-                robot_msgs::Walk_CMD cmd;
-                cmd.opt = 0;
-                cmd.radium = target_radium / 2;
-                cmd.pos.x = home_x;
-                cmd.pos.y = home_y;
-                aim_pub.publish(cmd);
+                if(true) {
+                    running = true;
+                    robot_msgs::Walk_CMD cmd;
+                    cmd.opt = 0;
+                    cmd.radium = target_radium / 2;
+                    cmd.pos.x = home_x;
+                    cmd.pos.y = home_y;
+                    aim_pub.publish(cmd);
+                }
             }
             break;
         default:
