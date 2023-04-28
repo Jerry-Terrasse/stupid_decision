@@ -1,20 +1,37 @@
 <launch>
-  <param name="init_x" value="8.5" />
-  <param name="init_y" value="5" />
+  <param name="init_x" value="3.155" />
+  <param name="init_y" value="3.710" />
 
-  <param name="aim1_x" value="9" />
-  <param name="aim1_y" value="5" />
-  <param name="aim2_x" value="13" />
-  <param name="aim2_y" value="5" />
-  <param name="home_x" value="7" />
-  <param name="home_y" value="7" />
+  <param name="patrol_x_1" value="9.030" />
+  <param name="patrol_y_1" value="1.5" />
+  <param name="patrol_x_2" value="6.040" />
+  <param name="patrol_y_2" value="1.020" />
 
-  <param name="reach_thresh" value="2" />
-  <param name="target_radium" value="0.8" />
+  <param name="home_x" value="3.5" />
+  <param name="home_y" value="2.5" />
+
+  <param name="min_x" value="-3.0" />
+  <param name="max_x" value="15.0" />
+  <param name="min_y" value="-3.0" />
+  <param name="max_y" value="11.0" />
+  <param name="min_z" value="-2.0" />
+  <param name="max_z" value="2.0" />
+
+  <param name="recover_x" value="0.5" />
+  <param name="recover_y" value="7.5" />
+
+  <param name="buff_x_1"    value="6.0" />
+  <param name="buff_y_1"    value="3.5" />
+  <param name="buff_x_2"    value="6.0" />
+  <param name="buff_y_2"    value="4.5" />
+
+  <param name="reach_thresh" value="0.8" />
+  <param name="target_radium" value="0.5" />
 
   <param name="rotate_when_move" value="1" />
-
-  <param name="exit_fight_time" value="5" />
+  <param name="use_build_blood"  value="false" />
+ 
+  <param name="exit_fight_time" value="3" />
 
   <node pkg="stupid_decision" type="decision_node" name="decision" output="screen" required="true">
   </node>
