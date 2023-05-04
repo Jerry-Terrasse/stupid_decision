@@ -1,0 +1,38 @@
+<launch>
+  <param name="init_x" value="13" />
+  <param name="init_y" value="2.5" />
+
+  <param name="patrol_x_1" value="8" />
+  <param name="patrol_y_1" value="9" />
+  <param name="patrol_x_2" value="8" />
+  <param name="patrol_y_2" value="6" />
+
+  <param name="home_x" value="13" />
+  <param name="home_y" value="2.5" />
+
+  <param name="min_x" value="-3.0" />
+  <param name="max_x" value="15.0" />
+  <param name="min_y" value="-3.0" />
+  <param name="max_y" value="16.0" />
+  <param name="min_z" value="-2.0" />
+  <param name="max_z" value="2.0" />
+
+  <param name="recover_x" value="13" />
+  <param name="recover_y" value="2.5" />
+
+  <param name="patrol_x_1" value="8" />
+  <param name="patrol_y_1" value="9" />
+  <param name="patrol_x_2" value="8" />
+  <param name="patrol_y_2" value="6" />
+
+  <param name="reach_thresh" value="0.8" />
+  <param name="target_radium" value="0.5" />
+
+  <param name="rotate_when_move" value="1" />
+  <param name="use_build_blood"  value="false" />
+ 
+  <param name="exit_fight_time" value="3" />
+
+  <node pkg="stupid_decision" type="decision_node" name="decision" output="screen" required="true">
+  </node>
+</launch>

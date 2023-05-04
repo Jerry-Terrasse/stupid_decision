@@ -291,20 +291,9 @@ int main(int argc, char **argv)
                 --recover_cnt;
                 next_status = RECOVER;
                 break;
-            } else if(build_hp < build_low_hp_thresh) {
+            } else if(build_hp < build_low_hp_thresh  && (use_build_blood)) {
                 ROS_INFO("Low BUILD HP!");
                 next_status = DEFEND;
-            if(game_time.data > 56 && game_time.data < 86) {
-                aim1_x = buff_x_1;
-                aim1_y = buff_y_1;
-                aim2_x = buff_x_2;
-                aim2_y = buff_y_2;
-            } else {
-                aim1_x = patrol_x_1;
-                aim1_y = patrol_y_1;
-                aim2_x = patrol_x_2;
-                aim2_y = patrol_y_2;
-            }
 
                 break;
             } else if(vitual_mode <= 1 && enemies.data.size() == 0 && ros::Time::now().toSec() - enemy_ts > exit_fight_time) {
